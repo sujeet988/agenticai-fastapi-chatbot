@@ -2,10 +2,33 @@
 ##1. Setup UI with streamlit (model provider, model, system prompt, query)
 import streamlit as st
 
-st.set_page_config(page_title="Chat with LLM", layout="wide")
+st.set_page_config(page_title="Chat with LLM", layout="centered")
 st.title("Ai Chat bot agent")
 st.write("create and interact with your own AI chat bot agent")
+system_prompt=st.text_area("Define your AI Agent: ", height=70, placeholder="Type your system prompt here...")
 
+Model_Name_Groq = ["openai/gpt-oss-120b","openai/gpt-oss-120b"]
+Model_Name_OpenAI = ["gpt-4"]
+
+provider=st.radio("Select Provider:", ("Groq", "OpenAI"))
+
+if provider =="Groq":
+    selected_model = st.selectbox("Select Groq Model:", Model_Name_Groq)
+elif provider =="OpenAI":
+    selected_model = st.selectbox("Select Groq Model:", Model_Name_OpenAI)
+
+
+allow_web_search=st.checkbox("Allow Web Search")
+
+user_query=st.text_area("Enter your query: ", height=150, placeholder="Ask Anything!")
+
+API_URL="http://127.0.0.1:9999/chat"
+
+if st.button("Ask agent"):
+    if user_query.strip():
+        response = "this is fixed response"
+        st.subheader("Agent Response")
+        st.markdown(f"Final Respnse**: {response}")
 
 
 
