@@ -1,20 +1,17 @@
 from fastapi import FastAPI
+from common.models import ChatRequest
+from agent.ai_agent import get_response_from_ai_agent
 
-from common.models import (
-    ChatRequest,
-    ChatResponse
-)
 
-from common.constants import ALLOWED_MODELS
-
-from agent.ai_agent import (
-    get_response_from_ai_agent
-)
+ALLOWED_MODELS = [
+    "openai/gpt-oss-120b",
+    "gpt-4o-mini"
+]
 
 
 app = FastAPI(
     title="Agent Hub API",
-    description="Agentic AI API using FastAPI",
+    description="Agentic AI Chatbot API",
     version="1.0.0"
 )
 
@@ -27,64 +24,36 @@ def root():
     }
 
 
-@app.get("/health")
-def health():
-
-    return {
-        "status": "healthy"
-    }
-
-
-@app.post(
-    "/chat",
-    response_model=ChatResponse
-)
+@app.post("/chat")
 def chat_endpoint(
     request: ChatRequest
 ):
 
-    # -----------------------------
-    # Validate provider
-    # -----------------------------
+    if request.model_name not in ALLOWED_MODELS:
 
-    if request.model_provider not in ALLOWED_MODELS:
-
-        return ChatResponse(
-            content=(
-                "Invalid model provider. "
-                "Please select a valid provider."
+        return {
+            "error": (
+                "Invalid model name. "
+                "Kindly select a valid AI model."
             )
-        )
-
-    # -----------------------------
-    # Validate model
-    # -----------------------------
-
-    allowed_models = ALLOWED_MODELS[
-        request.model_provider
-    ]
-
-    if request.model_name not in allowed_models:
-
-        return ChatResponse(
-            content=(
-                f"Invalid model '{request.model_name}' "
-                f"for provider '{request.model_provider}'."
-            )
-        )
-
-    # -----------------------------
-    # Call Agent
-    # -----------------------------
+        }
 
     response = get_response_from_ai_agent(
-        model_name=request.model_name,
-        messages=request.messages,
-        allow_search=request.allow_search,
-        system_prompt=request.system_prompt,
-        model_provider=request.model_provider
+        request.model_name,
+        request.messages,
+        request.allow_search,
+        request.system_prompt,
+        request.model_provider
     )
 
-    return ChatResponse(
-        content=response
+    return response
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",
+        host="127.0.0.1",
+        port=9999,
+        reload=True
     )

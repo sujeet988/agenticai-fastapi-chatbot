@@ -1,25 +1,17 @@
-import requests
 import streamlit as st
+import requests
 
-
-# --------------------------------
-# Page Configuration
-# --------------------------------
 
 st.set_page_config(
-    page_title="Agent Hub",
+    page_title="Chat with LLM",
     layout="centered"
 )
 
 
-# --------------------------------
-# Header
-# --------------------------------
-
-st.title("🤖 Agent Hub")
+st.title("AI Chat Bot Agent")
 
 st.write(
-    "Create and interact with your own AI agent."
+    "Create and interact with your own AI chat bot agent"
 )
 
 
@@ -28,50 +20,44 @@ st.write(
 # --------------------------------
 
 system_prompt = st.text_area(
-    "Define your AI Agent",
-    height=100,
-    placeholder=(
-        "Example: You are a helpful AI assistant "
-        "specialized in software engineering."
-    )
+    "Define your AI Agent:",
+    height=70,
+    placeholder="Type your system prompt here..."
 )
 
 
 # --------------------------------
-# Provider
+# Models
 # --------------------------------
+
+MODEL_NAME_GROQ = [
+    "openai/gpt-oss-120b"
+]
+
+MODEL_NAME_OPENAI = [
+    "gpt-4o-mini"
+]
+
 
 provider = st.radio(
-    "Select Provider",
-    (
-        "Groq",
-        "OpenAI"
-    ),
-    horizontal=True
+    "Select Provider:",
+    ("Groq", "OpenAI")
 )
 
-
-# --------------------------------
-# Model
-# --------------------------------
 
 if provider == "Groq":
 
-    models = [
-        "openai/gpt-oss-120b"
-    ]
+    selected_model = st.selectbox(
+        "Select Groq Model:",
+        MODEL_NAME_GROQ
+    )
 
 else:
 
-    models = [
-        "gpt-4o-mini"
-    ]
-
-
-selected_model = st.selectbox(
-    "Select Model",
-    models
-)
+    selected_model = st.selectbox(
+        "Select OpenAI Model:",
+        MODEL_NAME_OPENAI
+    )
 
 
 # --------------------------------
@@ -88,29 +74,24 @@ allow_web_search = st.checkbox(
 # --------------------------------
 
 user_query = st.text_area(
-    "Enter your query",
+    "Enter your query:",
     height=150,
-    placeholder="Ask anything..."
+    placeholder="Ask Anything!"
 )
 
 
 # --------------------------------
-# API
+# Backend API
 # --------------------------------
 
-API_URL = (
-    "http://127.0.0.1:9999/chat"
-)
+API_URL = "http://127.0.0.1:8000/chat"
 
 
 # --------------------------------
 # Ask Agent
 # --------------------------------
 
-if st.button(
-    "Ask Agent",
-    type="primary"
-):
+if st.button("Ask Agent"):
 
     if not user_query.strip():
 
@@ -126,12 +107,7 @@ if st.button(
 
             "model_provider": provider,
 
-            "system_prompt": (
-                system_prompt.strip()
-                if system_prompt.strip()
-                else
-                "You are a helpful AI assistant."
-            ),
+            "system_prompt": system_prompt,
 
             "messages": [
                 user_query
@@ -140,72 +116,68 @@ if st.button(
             "allow_search": allow_web_search
         }
 
+
         try:
 
-            with st.spinner(
-                "Agent is thinking..."
-            ):
+            response = requests.post(
+                API_URL,
+                json=payload
+            )
 
-                response = requests.post(
-                    API_URL,
-                    json=payload,
-                    timeout=120
-                )
-
-            # -------------------------
-            # Success
-            # -------------------------
 
             if response.status_code == 200:
 
                 response_data = response.json()
 
-                st.subheader(
-                    "Agent Response"
-                )
 
-                # API returns:
-                # {
-                #   "content": "..."
-                # }
+                if "error" in response_data:
 
-                st.markdown(
-                    response_data.get(
-                        "content",
-                        "No response received."
+                    st.error(
+                        response_data["error"]
                     )
-                )
 
-            # -------------------------
-            # Validation Error
-            # -------------------------
+                else:
 
-            elif response.status_code == 422:
+                    st.subheader(
+                        "Agent Response"
+                    )
 
-                st.error(
-                    "Invalid request sent to API."
-                )
+                    # Display only the final response
+                    if isinstance(
+                        response_data,
+                        dict
+                    ):
 
-                st.json(
-                    response.json()
-                )
+                        final_response = (
+                            response_data
+                            .get("response", "")
+                        )
 
-            # -------------------------
-            # Other API Error
-            # -------------------------
+                        st.markdown(
+                            final_response
+                        )
+
+                    else:
+
+                        st.markdown(
+                            str(response_data)
+                        )
+
 
             else:
 
                 st.error(
-                    f"API Error: {response.status_code}"
+                    f"API Error: "
+                    f"{response.status_code}"
                 )
 
                 st.json(
                     response.json()
                 )
 
-        except requests.exceptions.RequestException as ex:
+
+        except requests.exceptions.RequestException as e:
 
             st.error(
-                f"Unable to connect to API: {ex}"
+                f"Unable to connect to backend: {e}"
             )
