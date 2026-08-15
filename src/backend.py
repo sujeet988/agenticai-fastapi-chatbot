@@ -6,7 +6,7 @@ class RequestState(BaseModel):
     model_name:str
     model_provider:str
     system_prompt:str
-    message:List[str]
+    messages:List[str]
     allow_search:bool
 
 #Step2: Setup AI Agent from FrontEnd Request
@@ -24,7 +24,7 @@ def chat_endpoint(request: RequestState):
         return {"error":"Invalid model name. Kindly select a valid AI model"}
 
     llmid = request.model_name
-    query = request.message
+    query = request.messages
     allowsearch = request.allow_search
     systemprompt = request.system_prompt
     provider = request.model_provider
