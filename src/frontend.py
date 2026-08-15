@@ -7,7 +7,7 @@ st.title("Ai Chat bot agent")
 st.write("create and interact with your own AI chat bot agent")
 system_prompt=st.text_area("Define your AI Agent: ", height=70, placeholder="Type your system prompt here...")
 
-Model_Name_Groq = ["openai/gpt-oss-120b","openai/gpt-oss-120b"]
+Model_Name_Groq = ["openai/gpt-oss-120b","test model"]
 Model_Name_OpenAI = ["gpt-4"]
 
 provider=st.radio("Select Provider:", ("Groq", "OpenAI"))
@@ -26,10 +26,26 @@ API_URL="http://127.0.0.1:9999/chat"
 
 if st.button("Ask agent"):
     if user_query.strip():
-        response = "this is fixed response"
-        st.subheader("Agent Response")
-        st.markdown(f"Final Respnse**: {response}")
+         #Step2: Connect with backend via URL
+        import requests
+        payload={
+            "model_name": selected_model,
+            "model_provider": provider,
+            "system_prompt": system_prompt,
+            "messages": [user_query],
+            "allow_search": allow_web_search
+        }
 
-
+        response=requests.post(API_URL, json=payload)
+        if response.status_code == 200:
+            response_data = response.json()
+            if "error" in response_data:
+                st.error(response_data["error"])
+            else:
+                st.subheader("Agent Response")
+                st.markdown(f"**Final Response:** {response_data}")
+        else:
+            st.error(f"API Error: {response.status_code}")
+            st.json(response.json())
 
 ##2. Connect with backend via URL
