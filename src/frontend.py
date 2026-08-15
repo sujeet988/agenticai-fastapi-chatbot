@@ -41,9 +41,26 @@ if st.button("Ask agent"):
             response_data = response.json()
             if "error" in response_data:
                 st.error(response_data["error"])
+            elif isinstance(response_data, list):
+                # Find AI message
+                ai_messages = [
+                message
+                for message in response_data
+                if message.get("type") == "ai"
+                ]
+
+                if ai_messages:
+                    final_response = ai_messages[-1]["content"]
+
+                    st.subheader("Agent Response")
+                    st.markdown(final_response)
+
+                else:
+                    st.warning("No AI response found.")
+
             else:
                 st.subheader("Agent Response")
-                st.markdown(f"**Final Response:** {response_data}")
+                st.markdown(str(response_data))
         else:
             st.error(f"API Error: {response.status_code}")
             st.json(response.json())
