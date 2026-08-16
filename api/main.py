@@ -18,42 +18,31 @@ app = FastAPI(
 
 @app.get("/")
 def root():
-
-    return {
-        "message": "Agent Hub API is running"
-    }
+    return {"message": "Agent Hub API is running"}
 
 
 @app.post("/chat")
-def chat_endpoint(
-    request: ChatRequest
-):
-
+async def chat_endpoint(request: ChatRequest):
     if request.model_name not in ALLOWED_MODELS:
-
         return {
-            "error": (
-                "Invalid model name. "
-                "Kindly select a valid AI model."
-            )
+            "error": "Invalid model name. Kindly select a valid AI model."
         }
 
-    response = get_response_from_ai_agent(
+    return await get_response_from_ai_agent(
         request.model_name,
         request.messages,
         request.allow_search,
         request.system_prompt,
-        request.model_provider
+        request.model_provider,
     )
-
-    return response
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
-        "main:app",
+        "api.main:app",
         host="127.0.0.1",
         port=9999,
-        reload=True
+        reload=True,
     )
