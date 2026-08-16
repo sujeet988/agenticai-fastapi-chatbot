@@ -2,8 +2,7 @@ from langchain_core.tools import StructuredTool
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
-
-MCP_SERVER_URL = "http://127.0.0.1:8000/mcp"
+from common.config import MCP_SERVER_URL
 
 
 async def _call_mcp_tool(name: str, arguments: dict) -> str:
