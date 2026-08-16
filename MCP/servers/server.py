@@ -1,7 +1,7 @@
 import os
-
+from dotenv import load_dotenv
 from mcp.server.mcpserver import MCPServer
-
+load_dotenv()
 
 mcp = MCPServer("agent-hub-tools")
 
