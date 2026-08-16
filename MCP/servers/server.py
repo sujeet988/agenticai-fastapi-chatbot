@@ -1,5 +1,13 @@
+import os
+
 from mcp.server.mcpserver import MCPServer
-mcp = MCPServer("agent-hub-tools")
+
+
+mcp = MCPServer(
+    "agent-hub-tools",
+    host=os.getenv("MCP_HOST", "127.0.0.1"),
+    port=int(os.getenv("MCP_PORT", "8000")),
+)
 
 
 @mcp.tool()
