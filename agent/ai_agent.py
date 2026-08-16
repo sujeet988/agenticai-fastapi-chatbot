@@ -2,7 +2,7 @@ from langgraph.prebuilt import create_react_agent
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
-from MCP.client import get_mcp_tools
+from common.mcp_client_adapter import get_mcp_tools
 from common.config import GROQ_API_KEY, OPENAI_API_KEY
 
 
