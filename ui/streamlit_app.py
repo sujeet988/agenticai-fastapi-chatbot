@@ -61,11 +61,11 @@ else:
 
 
 # --------------------------------
-# Web Search
+# RAG
 # --------------------------------
 
-allow_web_search = st.checkbox(
-    "Allow Web Search"
+allow_rag = st.checkbox(
+    "Allow RAG"
 )
 
 
@@ -84,7 +84,7 @@ user_query = st.text_area(
 # Backend API
 # --------------------------------
 
-API_URL = "http://127.0.0.1:8000/chat"
+API_URL = "http://127.0.0.1:9999/chat"
 
 
 # --------------------------------
@@ -113,7 +113,7 @@ if st.button("Ask Agent"):
                 user_query
             ],
 
-            "allow_search": allow_web_search
+            "allow_search": allow_rag
         }
 
 
@@ -142,7 +142,6 @@ if st.button("Ask Agent"):
                         "Agent Response"
                     )
 
-                    # Display only the final response
                     if isinstance(
                         response_data,
                         dict
