@@ -165,11 +165,63 @@ UI_API_URL=http://127.0.0.1:9999
 
 The `.env` file should not be committed to source control.
 
-## 6. Runtime Services
+## 6. Local Setup
 
-Run the services from the project root.
+Run the following steps from the project root.
 
-### Terminal 1 — MCP Server
+### 6.1 Clone and checkout the branch
+
+```powershell
+git clone https://github.com/sujeet988/agenticai-fastapi-chatbot.git
+cd agenticai-fastapi-chatbot
+git checkout agent-hub
+```
+
+### 6.2 Create a virtual environment
+
+Windows PowerShell:
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks activation, use the Python executable directly or adjust the local execution policy as appropriate for your machine.
+
+### 6.3 Install dependencies
+
+```powershell
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+The project pins the MCP SDK to the version used by this implementation.
+
+### 6.4 Configure `.env`
+
+Create a `.env` file in the project root:
+
+```env
+GROQ_API_KEY=your_groq_key
+OPENAI_API_KEY=your_openai_key
+TAVILY_API_KEY=your_tavily_key
+
+MCP_HOST=127.0.0.1
+MCP_PORT=8000
+
+API_HOST=127.0.0.1
+API_PORT=9999
+
+UI_API_URL=http://127.0.0.1:9999
+```
+
+Do not commit `.env` or API keys to Git.
+
+### 6.5 Start the local services
+
+Start all services from the project root in three terminals.
+
+**Terminal 1 — MCP Server**
 
 ```powershell
 python -m MCP.servers.server
@@ -181,7 +233,7 @@ MCP endpoint:
 http://127.0.0.1:8000/mcp
 ```
 
-### Terminal 2 — FastAPI
+**Terminal 2 — FastAPI**
 
 ```powershell
 python -m api.main
@@ -199,13 +251,94 @@ Swagger:
 http://127.0.0.1:9999/docs
 ```
 
+**Terminal 3 — Streamlit**
+
+```powershell
+streamlit run ui/streamlit_app.py
+```
+
+Open the Streamlit URL shown in the terminal, normally:
+
+```text
+http://localhost:8501
+```
+
+Ports are read from `.env`; do not pass `--port` for MCP or FastAPI when using these project entrypoints.
+
+### 6.6 Verify MCP independently
+
+Before testing the UI, verify that the MCP server is running and that the client can reach the endpoint.
+
+Expected MCP endpoint:
+
+```text
+http://127.0.0.1:8000/mcp
+```
+
+The two tools exposed by the server are:
+
+```text
+calculator
+get_product_info
+```
+
+### 6.7 Test the agent
+
+From the Streamlit UI, try:
+
+```text
+What is 10 + 20?
+```
+
+The expected path is:
+
+```text
+Streamlit
+   ↓
+FastAPI
+   ↓
+LangGraph Agent
+   ↓
+MCP Client Adapter
+   ↓
+MCP Server
+   ↓
+calculator
+   ↓
+30
+```
+
+Then try:
+
+```text
+What is the price of a laptop?
+```
+
+The agent should select `get_product_info`.
+
+## 7. Runtime Services
+
+For normal local development, use these commands:
+
+### Terminal 1 — MCP Server
+
+```powershell
+python -m MCP.servers.server
+```
+
+### Terminal 2 — FastAPI
+
+```powershell
+python -m api.main
+```
+
 ### Terminal 3 — Streamlit
 
 ```powershell
 streamlit run ui/streamlit_app.py
 ```
 
-## 7. Current Project Structure
+## 8. Current Project Structure
 
 ```text
 agenticai-fastapi-chatbot/
@@ -248,7 +381,7 @@ agenticai-fastapi-chatbot/
 └── SYSTEM_DESIGN.md
 ```
 
-## 8. RAG Status
+## 9. RAG Status
 
 RAG is kept separate from the current agent flow while MCP is being verified.
 
@@ -268,7 +401,7 @@ Vector Store Interface
 
 The RAG layer can later be exposed as another agent tool without changing the MCP architecture.
 
-## 9. Extensibility
+## 10. Extensibility
 
 The current boundaries are intended to support future capabilities without rewriting the core request flow.
 
@@ -296,7 +429,7 @@ Multiple MCP servers
 A2A communication
 ```
 
-## 10. Design Principles
+## 11. Design Principles
 
 - **Loose coupling:** Agent, MCP adapter, MCP server, and RAG are separate concerns.
 - **Protocol isolation:** MCP-specific code is contained in the MCP server and client adapter.
