@@ -7,7 +7,9 @@ class ChatRequest(BaseModel):
     model_provider: str
     system_prompt: str
     messages: List[str]
-    allow_search: bool
+    allow_search: bool = False
 
-class ChatResponse(BaseModel):
-    content: str
+
+class RagRequest(BaseModel):
+    query: str
+    top_k: int = 2
