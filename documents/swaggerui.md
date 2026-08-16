@@ -9,6 +9,7 @@ OpenAPI JSON	http://127.0.0.1:9999/openapi.json
 -streamlit run frontend.py
 -streamlit run ui/streamlit_app.py
 ## for deactive venv
+pip freeze > requirements.txt
 deactivate
 
 -Then remove the broken venv:
