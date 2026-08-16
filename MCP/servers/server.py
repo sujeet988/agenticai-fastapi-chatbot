@@ -1,10 +1,7 @@
-import os
-from dotenv import load_dotenv
+from common.config import MCP_HOST, MCP_PORT
 from mcp.server.mcpserver import MCPServer
-load_dotenv()
 
 mcp = MCPServer("agent-hub-tools")
-
 
 @mcp.tool()
 def calculator(expression: str) -> str:
@@ -31,6 +28,6 @@ def get_product_info(product: str) -> str:
 if __name__ == "__main__":
     mcp.run(
         transport="streamable-http",
-        host=os.getenv("MCP_HOST", "127.0.0.1"),
-        port=int(os.getenv("MCP_PORT", "8000")),
+        host=MCP_HOST,
+        port=MCP_PORT,
     )

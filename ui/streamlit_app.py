@@ -1,5 +1,6 @@
 import requests
 import streamlit as st
+from common.config import UI_API_URL
 
 
 st.set_page_config(page_title="Agent Hub", layout="centered")
@@ -40,7 +41,7 @@ if st.button("Ask Agent"):
 
         try:
             response = requests.post(
-                "http://127.0.0.1:9999/chat",
+                f"{UI_API_URL}/chat",
                 json=payload,
                 timeout=120,
             )

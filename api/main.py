@@ -1,8 +1,8 @@
 from fastapi import FastAPI
-
 from agent.ai_agent import get_response_from_ai_agent
 from common.models import ChatRequest, RagRequest
 from RAG.retriever import retrieve_context
+from common.config import API_HOST, API_PORT
 
 
 ALLOWED_MODELS = [
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "api.main:app",
-        host="127.0.0.1",
-        port=9999,
+        host=API_HOST,
+        port=API_PORT,
         reload=True,
     )
