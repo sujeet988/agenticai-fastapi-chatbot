@@ -21,6 +21,7 @@ def get_product_info(product: str) -> str:
     products = {
         "laptop": "Laptop: 16GB RAM, 512GB SSD, price $1200",
         "phone": "Phone: 8GB RAM, 256GB storage, price $700",
+        "tablet": "Tablet: 8GB RAM, 128GB storage, price $400",
     }
     return products.get(product.lower(), "Product not found")
 
