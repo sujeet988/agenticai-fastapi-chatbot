@@ -6,28 +6,33 @@ from mcp.client.streamable_http import streamable_http_client
 MCP_SERVER_URL = "http://127.0.0.1:8000/mcp"
 
 
-async def get_mcp_tools():
-    """Discover tools from the remote MCP server and adapt them to LangChain."""
+async def _call_mcp_tool(name: str, arguments: dict) -> str:
+    """Call one MCP tool through Streamable HTTP."""
     async with streamable_http_client(MCP_SERVER_URL) as (read, write, _):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            result = await session.list_tools()
+            result = await session.call_tool(name, arguments)
+            return "\n".join(
+                getattr(content, "text", str(content))
+                for content in result.content
+            )
 
-            tools = []
-            for item in result.tools:
-                async def call_tool(args, name=item.name):
-                    response = await session.call_tool(name, args)
-                    return "\n".join(
-                        getattr(content, "text", str(content))
-                        for content in response.content
-                    )
 
-                tools.append(
-                    StructuredTool.from_function(
-                        coroutine=call_tool,
-                        name=item.name,
-                        description=item.description or item.name,
-                    )
-                )
-
-            return tools
+def get_mcp_tools():
+    """Expose remote MCP tools as LangChain tools."""
+    return [
+        StructuredTool.from_function(
+            coroutine=lambda expression: _call_mcp_tool(
+                "calculator", {"expression": expression}
+            ),
+            name="calculator",
+            description="Calculate a simple arithmetic expression.",
+        ),
+        StructuredTool.from_function(
+            coroutine=lambda product: _call_mcp_tool(
+                "get_product_info", {"product": product}
+            ),
+            name="get_product_info",
+            description="Return demo product information.",
+        ),
+    ]
