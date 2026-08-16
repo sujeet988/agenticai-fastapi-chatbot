@@ -23,30 +23,39 @@ pip install -r requirements.txt
 
 ## 4. Create `.env`
 
-Create `.env` in the project root:
+Create `.env` in the project root and replace the placeholder values with your own keys:
 
 ```env
-# LLM keys
-GROQ_API_KEY=your_groq_key
-OPENAI_API_KEY=your_openai_key
+# -----------------------------
+# LLM / AI provider keys
+# -----------------------------
+GROQ_API_KEY=your_groq_api_key
+OPENAI_API_KEY=your_openai_api_key
+TAVILY_API_KEY=your_tavily_api_key
 
-# MCP
+# -----------------------------
+# MCP Server
+# -----------------------------
 MCP_HOST=127.0.0.1
 MCP_PORT=8000
 
+# -----------------------------
 # FastAPI
+# -----------------------------
 API_HOST=127.0.0.1
 API_PORT=9999
 
+# -----------------------------
 # Streamlit -> FastAPI
+# -----------------------------
 UI_API_URL=http://127.0.0.1:9999
 ```
 
-Do not commit `.env`.
+> Do not commit `.env` to Git. Use real secret values only in your local environment.
 
 ## 5. Run the services
 
-Open three terminals, activate the virtual environment in each, and run:
+Open three terminals from the project root, activate the virtual environment in each, and run:
 
 ### Terminal 1 — MCP Server
 
@@ -98,7 +107,7 @@ In the UI, try:
 What is 10 + 20?
 ```
 
-The expected flow is:
+Expected flow:
 
 ```text
 Streamlit
