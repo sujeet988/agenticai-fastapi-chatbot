@@ -22,6 +22,33 @@ st.set_page_config(
 )
 
 
+st.markdown(
+    """
+    <style>
+        .main .block-container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        [data-testid="stChatMessage"] {
+            max-width: 760px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        [data-testid="stChatInput"] {
+            max-width: 760px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
