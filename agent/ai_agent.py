@@ -32,8 +32,8 @@ async def get_response_from_ai_agent(
     """ReAct agent using remote MCP tools plus the local RAG retriever."""
     llm = get_llm(model_name, model_provider)
 
-    # Discover the two tools from the MCP server over Streamable HTTP.
-    mcp_tools = await get_mcp_tools()
+    # The MCP client creates async LangChain wrappers for the remote tools.
+    mcp_tools = get_mcp_tools()
     tools = mcp_tools + ([search_knowledge_base] if allow_search else [])
 
     agent = create_react_agent(llm, tools)
