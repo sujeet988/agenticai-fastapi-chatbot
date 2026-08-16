@@ -81,13 +81,10 @@ for message in st.session_state.messages:
 # -----------------------------
 # Bottom: User question
 # -----------------------------
-user_query = st.chat_input(
-    "Ask your agent..."
-)
+user_query = st.chat_input("Ask your agent...")
 
 
 if user_query:
-    # Show the user message immediately.
     st.session_state.messages.append(
         {
             "role": "user",
@@ -98,18 +95,13 @@ if user_query:
     with st.chat_message("user"):
         st.markdown(user_query)
 
-    # Send the user messages to the existing FastAPI contract.
-    user_messages = [
-        message["content"]
-        for message in st.session_state.messages
-        if message["role"] == "user"
-    ]
-
+    # Phase 1: UI-only history.
+    # The backend receives only the current question.
     payload = {
         "model_name": selected_model,
         "model_provider": provider,
         "system_prompt": system_prompt,
-        "messages": user_messages,
+        "messages": [user_query],
         "allow_search": False,
     }
 
