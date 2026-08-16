@@ -1,6 +1,16 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 import requests
 import streamlit as st
-from common.config import UI_API_URL
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
+
+UI_API_URL = os.getenv(
+    "UI_API_URL",
+    "http://127.0.0.1:9999",
+)
 
 
 st.set_page_config(page_title="Agent Hub", layout="centered")
