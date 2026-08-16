@@ -18,7 +18,7 @@ UI_API_URL = os.getenv(
 st.set_page_config(
     page_title="Agent Hub",
     page_icon="🤖",
-    layout="wide",
+    layout="centered",
 )
 
 
@@ -26,20 +26,24 @@ st.markdown(
     """
     <style>
         .main .block-container {
-            max-width: 850px;
+            max-width: 900px;
             margin: 0 auto;
-            padding-top: 2rem;
+            padding-top: 1.5rem;
             padding-bottom: 2rem;
         }
 
+        [data-testid="stSidebar"] {
+            width: 260px;
+        }
+
         [data-testid="stChatMessage"] {
-            max-width: 760px;
+            max-width: 720px;
             margin-left: auto;
             margin-right: auto;
         }
 
         [data-testid="stChatInput"] {
-            max-width: 760px;
+            max-width: 720px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -53,9 +57,6 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 
-# -----------------------------
-# Left panel: Agent configuration
-# -----------------------------
 with st.sidebar:
     st.title("Agent Hub")
     st.caption("FastAPI + LangGraph + MCP Streamable HTTP")
@@ -90,9 +91,6 @@ with st.sidebar:
         st.rerun()
 
 
-# -----------------------------
-# Right panel: Chat
-# -----------------------------
 st.title("Chat")
 st.caption(f"Using {provider} · {selected_model}")
 
@@ -105,9 +103,6 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 
-# -----------------------------
-# Bottom: User question
-# -----------------------------
 user_query = st.chat_input("Ask your agent...")
 
 
@@ -122,8 +117,6 @@ if user_query:
     with st.chat_message("user"):
         st.markdown(user_query)
 
-    # Phase 1: UI-only history.
-    # The backend receives only the current question.
     payload = {
         "model_name": selected_model,
         "model_provider": provider,
