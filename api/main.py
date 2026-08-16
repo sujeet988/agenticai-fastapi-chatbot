@@ -1,18 +1,20 @@
 from fastapi import FastAPI
-from common.models import ChatRequest
+
 from agent.ai_agent import get_response_from_ai_agent
+from common.models import ChatRequest, RagRequest
+from RAG.retriever import retrieve_context
 
 
 ALLOWED_MODELS = [
     "openai/gpt-oss-120b",
-    "gpt-4o-mini"
+    "gpt-4o-mini",
 ]
 
 
 app = FastAPI(
     title="Agent Hub API",
-    description="Agentic AI Chatbot API",
-    version="1.0.0"
+    description="Agentic AI API with MCP and standalone RAG",
+    version="1.1.0",
 )
 
 
@@ -35,6 +37,14 @@ async def chat_endpoint(request: ChatRequest):
         request.system_prompt,
         request.model_provider,
     )
+
+
+@app.post("/rag")
+def rag_endpoint(request: RagRequest):
+    return {
+        "query": request.query,
+        "context": retrieve_context(request.query, request.top_k),
+    }
 
 
 if __name__ == "__main__":
