@@ -1,7 +1,5 @@
-from mcp.server.fastmcp import FastMCP
-
-
-mcp = FastMCP("agent-hub-tools")
+from mcp.server.mcpserver import MCPServer
+mcp = MCPServer("agent-hub-tools")
 
 
 @mcp.tool()
