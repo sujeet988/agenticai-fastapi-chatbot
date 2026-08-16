@@ -3,11 +3,7 @@ import os
 from mcp.server.mcpserver import MCPServer
 
 
-mcp = MCPServer(
-    "agent-hub-tools",
-    host=os.getenv("MCP_HOST", "127.0.0.1"),
-    port=int(os.getenv("MCP_PORT", "8000")),
-)
+mcp = MCPServer("agent-hub-tools")
 
 
 @mcp.tool()
@@ -33,4 +29,8 @@ def get_product_info(product: str) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    mcp.run(
+        transport="streamable-http",
+        host=os.getenv("MCP_HOST", "127.0.0.1"),
+        port=int(os.getenv("MCP_PORT", "8000")),
+    )
