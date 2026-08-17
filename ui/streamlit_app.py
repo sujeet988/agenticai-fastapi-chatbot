@@ -22,37 +22,6 @@ st.set_page_config(
 )
 
 
-st.markdown(
-    """
-    <style>
-        .main .block-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding-top: 1.5rem;
-            padding-bottom: 2rem;
-        }
-
-        [data-testid="stSidebar"] {
-            width: 260px;
-        }
-
-        [data-testid="stChatMessage"] {
-            max-width: 720px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        [data-testid="stChatInput"] {
-            max-width: 720px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -84,6 +53,12 @@ with st.sidebar:
         models[provider],
     )
 
+    agent_mode = st.radio(
+        "Agent Mode",
+        ("Single Agent", "Multi Agent"),
+        help="Multi Agent runs the MCP/tool agent and reviewer agent, then aggregates both results.",
+    )
+
     show_execution_details = st.checkbox(
         "Show execution details",
         value=False,
@@ -98,7 +73,7 @@ with st.sidebar:
 
 
 st.title("Chat")
-st.caption(f"Using {provider} · {selected_model}")
+st.caption(f"Using {provider} · {selected_model} · {agent_mode}")
 
 if not st.session_state.messages:
     st.info("Ask a question below to start the conversation.")
@@ -123,20 +98,32 @@ if user_query:
     with st.chat_message("user"):
         st.markdown(user_query)
 
-    payload = {
-        "model_name": selected_model,
-        "model_provider": provider,
-        "system_prompt": system_prompt,
-        "messages": [user_query],
-        "allow_search": False,
-        "include_execution_details": show_execution_details,
-    }
+    # Single-agent and multi-agent APIs use different request shapes.
+    if agent_mode == "Multi Agent":
+        endpoint = f"{UI_API_URL}/multi-agent"
+        payload = {
+            "model_name": selected_model,
+            "model_provider": provider,
+            "system_prompt": system_prompt,
+            "query": user_query,
+            "include_execution_details": show_execution_details,
+        }
+    else:
+        endpoint = f"{UI_API_URL}/chat"
+        payload = {
+            "model_name": selected_model,
+            "model_provider": provider,
+            "system_prompt": system_prompt,
+            "messages": [user_query],
+            "allow_search": False,
+            "include_execution_details": show_execution_details,
+        }
 
     try:
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 response = requests.post(
-                    f"{UI_API_URL}/chat",
+                    endpoint,
                     json=payload,
                     timeout=120,
                 )
