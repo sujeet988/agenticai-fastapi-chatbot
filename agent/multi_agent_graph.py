@@ -14,7 +14,8 @@ class MultiAgentState(TypedDict, total=False):
     agent_one_result: str
     agent_two_result: str
     final_result: str
-    execution: dict
+    agent_one_execution: dict
+    agent_two_execution: dict
 
 
 async def agent_one(state: MultiAgentState) -> dict:
@@ -30,9 +31,7 @@ async def agent_one(state: MultiAgentState) -> dict:
 
     return {
         "agent_one_result": result["answer"],
-        "execution": {
-            "agent_one": result["execution"],
-        },
+        "agent_one_execution": result["execution"],
     }
 
 
@@ -46,13 +45,11 @@ async def agent_two(state: MultiAgentState) -> dict:
 
     return {
         "agent_two_result": result,
-        "execution": {
-            "agent_two": {
-                "name": "reviewer_agent",
-                "status": "completed",
-                "tool_called": False,
-                "tools": [],
-            }
+        "agent_two_execution": {
+            "name": "reviewer_agent",
+            "status": "completed",
+            "tool_called": False,
+            "tools": [],
         },
     }
 
@@ -78,18 +75,7 @@ Agent 2 result:
 
     response = await llm.ainvoke([("system", prompt)])
 
-    execution = state.get("execution", {})
-    execution["aggregator"] = {
-        "name": "aggregator",
-        "status": "completed",
-        "tool_called": False,
-        "tools": [],
-    }
-
-    return {
-        "final_result": response.content,
-        "execution": execution,
-    }
+    return {"final_result": response.content}
 
 
 # Fan-out: both agents start together; aggregation waits for both.
@@ -137,9 +123,14 @@ async def run_multi_agent(
                 "aggregator",
             ],
             "agents": [
-                result["execution"]["agent_one"],
-                result["execution"]["agent_two"],
-                result["execution"]["aggregator"],
+                result["agent_one_execution"],
+                result["agent_two_execution"],
+                {
+                    "name": "aggregator",
+                    "status": "completed",
+                    "tool_called": False,
+                    "tools": [],
+                },
             ],
         },
     }
