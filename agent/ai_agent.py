@@ -30,8 +30,9 @@ async def get_response_from_ai_agent(
     allow_search: bool,
     system_prompt: str,
     model_provider: str,
+    include_execution_details: bool = False,
 ):
-    """Simple ReAct agent using only remote MCP tools for now."""
+    """Run the ReAct agent and optionally return tool execution details."""
     del allow_search  # RAG will be added separately after MCP is verified.
 
     llm = get_llm(model_name, model_provider)
@@ -49,4 +50,29 @@ async def get_response_from_ai_agent(
     agent = create_react_agent(llm, mcp_tools)
     result = await agent.ainvoke({"messages": conversation})
 
-    return result["messages"][-1].content
+    answer = result["messages"][-1].content
+
+    if not include_execution_details:
+        return answer
+
+    # LangGraph records tool calls/results as messages in the execution state.
+    tool_calls = []
+    for message in result["messages"]:
+        message_type = getattr(message, "type", "")
+        if message_type == "tool":
+            tool_calls.append(
+                {
+                    "name": getattr(message, "name", "unknown"),
+                    "result": getattr(message, "content", ""),
+                }
+            )
+
+    return {
+        "answer": answer,
+        "execution": {
+            "agents_called": 1,
+            "execution_path": ["tool_agent"],
+            "tool_called": bool(tool_calls),
+            "tools": tool_calls,
+        },
+    }
