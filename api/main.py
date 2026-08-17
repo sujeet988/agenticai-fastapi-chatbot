@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from agent.ai_agent import get_response_from_ai_agent
 from agent.multi_agent_graph import run_multi_agent
 from common.config import API_HOST, API_PORT
-from common.models import ChatRequest, RagRequest
+from common.models import ChatRequest, MultiAgentRequest, RagRequest
 from RAG.retriever import retrieve_context
 
 
@@ -38,27 +38,27 @@ async def chat_endpoint(request: ChatRequest):
         request.allow_search,
         request.system_prompt,
         request.model_provider,
+        request.include_execution_details,
     )
 
 
 @app.post("/multi-agent")
-async def multi_agent_endpoint(request: ChatRequest):
-    """Run two agents, aggregate their results, and return one answer."""
+async def multi_agent_endpoint(request: MultiAgentRequest):
+    """Run two agents, aggregate their results, optionally return trace details."""
     if request.model_name not in ALLOWED_MODELS:
         return {
             "error": "Invalid model name. Kindly select a valid AI model."
         }
 
-    query = request.messages[-1] if request.messages else ""
-
-    if not query.strip():
+    if not request.query.strip():
         return {"error": "Please provide a question."}
 
     return await run_multi_agent(
-        query=query,
+        query=request.query,
         model_name=request.model_name,
         model_provider=request.model_provider,
         system_prompt=request.system_prompt,
+        include_execution_details=request.include_execution_details,
     )
 
 
