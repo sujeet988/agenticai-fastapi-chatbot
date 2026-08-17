@@ -84,6 +84,12 @@ with st.sidebar:
         models[provider],
     )
 
+    show_execution_details = st.checkbox(
+        "Show execution details",
+        value=False,
+        help="Show agent and tool execution metadata for learning/debugging.",
+    )
+
     st.divider()
 
     if st.button("Clear Chat", use_container_width=True):
@@ -123,6 +129,7 @@ if user_query:
         "system_prompt": system_prompt,
         "messages": [user_query],
         "allow_search": False,
+        "include_execution_details": show_execution_details,
     }
 
     try:
@@ -136,15 +143,21 @@ if user_query:
                 response.raise_for_status()
                 result = response.json()
 
+                # Backend returns either a plain answer or answer + execution metadata.
                 if isinstance(result, str):
                     answer = result
+                    execution = None
                 else:
-                    answer = result.get(
-                        "error",
-                        str(result),
-                    )
+                    answer = result.get("answer")
+                    if answer is None:
+                        answer = result.get("error", str(result))
+                    execution = result.get("execution")
 
                 st.markdown(answer)
+
+                if show_execution_details and execution:
+                    with st.expander("Execution Details", expanded=True):
+                        st.json(execution)
 
         st.session_state.messages.append(
             {
