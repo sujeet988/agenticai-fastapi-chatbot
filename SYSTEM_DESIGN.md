@@ -17,26 +17,34 @@
                     ┌──────────────────────────────────┐
                     │          FastAPI Backend          │
                     │                                  │
-                    │  POST /chat                      │
+                    │  POST /chat ──► ReAct Agent      │
+                    │                                  │
+                    │  POST /multi-agent               │
                     │        │                         │
                     │        ▼                         │
-                    │   LangGraph ReAct Agent          │
-                    │        │                         │
-                    │        ▼                         │
-                    │   MCP Client Adapter             │
+                    │   LangGraph Graph                │
                     └─────────┬────────────────────────┘
                               │
-                              │ Streamable HTTP
+                 ┌────────────┴────────────┐
+                 │                         │
+                 ▼                         ▼
+        ┌─────────────────┐       ┌─────────────────┐
+        │    Agent 1      │       │    Agent 2      │
+        │ ReAct + MCP     │       │    Reviewer     │
+        └────────┬────────┘       └────────┬────────┘
+                 │                         │
+                 └────────────┬────────────┘
                               ▼
-                    ┌──────────────────────────────┐
-                    │        MCP Server             │
-                    │                              │
-                    │  calculator                  │
-                    │  get_product_info            │
-                    └──────────────┬───────────────┘
-                                   │
-                                   ▼
-                         External Tools / Systems
+                    ┌──────────────────────┐
+                    │ Aggregator Agent     │
+                    │ combines both results│
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                         Final API response
+
+Agent 1 tool path:
+Agent 1 → MCP Client Adapter → Streamable HTTP → MCP Server → Tools
 ```
 
 ## 2. Component Responsibilities
@@ -55,12 +63,12 @@ Entry point: `api/main.py`
 
 Responsibilities:
 
-- Exposes the `/chat` API.
+- Exposes `/chat` for the original single-agent flow.
+- Exposes `/multi-agent` for the two-agent graph.
 - Validates the incoming request using Pydantic.
-- Calls the agent layer.
-- Returns the final agent response to the UI.
+- Returns the final response to the UI/client.
 
-### Agent Layer
+### Agent 1 — ReAct + MCP
 
 Entry point: `agent/ai_agent.py`
 
@@ -70,7 +78,40 @@ Responsibilities:
 - Selects the configured LLM provider/model.
 - Gives the agent access to MCP tools.
 - Lets the LLM decide when a tool should be called.
-- Returns the final answer.
+- Returns the first specialist result to the multi-agent graph.
+
+### Agent 2 — Reviewer
+
+Entry point: `agent/reviewer_agent.py`
+
+Responsibilities:
+
+- Uses the same configured LLM provider/model.
+- Independently reviews the same user question.
+- Produces a second specialist result.
+- Does not call MCP tools in this simple example.
+
+### Multi-Agent Graph
+
+Entry point: `agent/multi_agent_graph.py`
+
+Responsibilities:
+
+- Starts Agent 1 and Agent 2 from the same user query.
+- Runs the two specialist nodes independently.
+- Waits for both results.
+- Sends both results to the aggregator node.
+- Returns one final answer.
+
+### Aggregator Agent
+
+Implemented in `agent/multi_agent_graph.py`.
+
+Responsibilities:
+
+- Receives both specialist outputs.
+- Resolves differences.
+- Produces one concise final answer for the API.
 
 ### MCP Client Adapter
 
@@ -82,9 +123,7 @@ Responsibilities:
 - Connects to the MCP server using Streamable HTTP.
 - Initializes an MCP session.
 - Calls remote tools.
-- Exposes MCP tools to the LangGraph agent.
-
-The agent does not need to know MCP protocol details.
+- Exposes MCP tools to Agent 1.
 
 ### MCP Server
 
@@ -98,108 +137,99 @@ Responsibilities:
   - `calculator`
   - `get_product_info`
 
-## 3. Agentic Request Flow
+## 3. Single-Agent Request Flow
 
-Example request:
+Example:
 
 ```text
 User: What is 10 + 20?
 ```
 
-Flow:
-
 ```text
-1. Streamlit sends the question to FastAPI.
-2. FastAPI invokes the LangGraph ReAct agent.
-3. The agent determines that a calculator tool is useful.
-4. Agent calls the MCP client adapter.
-5. MCP client connects to the MCP server over Streamable HTTP.
-6. MCP server executes calculator("10 + 20").
-7. Tool result = 30.
-8. Agent produces the final response.
-9. FastAPI returns the response to Streamlit.
+Streamlit
+   ↓
+FastAPI /chat
+   ↓
+Agent 1 (ReAct)
+   ↓
+MCP Client Adapter
+   ↓
+MCP Server
+   ↓
+calculator("10 + 20")
+   ↓
+30
+   ↓
+Final response
 ```
 
-## 4. Why This Is Agentic
+## 4. Multi-Agent Request Flow
 
-The LLM is not limited to direct text generation. It can decide whether an external tool is required and invoke that tool through MCP before producing the final response.
+Endpoint:
 
 ```text
-User Goal
-   ↓
-LLM / Agent
-   ↓
-Tool needed?
-   ├── No ──► Final answer
-   │
-   └── Yes
-        ↓
-   MCP Client Adapter
-        ↓
-   MCP Server
-        ↓
-   Tool execution
-        ↓
-   Tool result
-        ↓
-   Agent
-        ↓
-   Final answer
+POST /multi-agent
 ```
 
-## 5. Configuration
+The important part is the graph fan-out:
+
+```text
+                    User Query
+                        │
+                        ▼
+                 ┌─────────────┐
+                 │  LangGraph  │
+                 │ Orchestrator│
+                 └──────┬──────┘
+                        │
+              ┌─────────┴─────────┐
+              ▼                   ▼
+       ┌─────────────┐     ┌─────────────┐
+       │   Agent 1   │     │   Agent 2   │
+       │ ReAct + MCP │     │   Reviewer  │
+       └──────┬──────┘     └──────┬──────┘
+              │                   │
+              └─────────┬─────────┘
+                        ▼
+                ┌──────────────┐
+                │   Aggregate  │
+                │   Agent      │
+                └──────┬───────┘
+                       ▼
+                 Final Answer
+```
+
+For example:
+
+```text
+Question
+  ↓
+Agent 1 → uses calculator/product tool when needed
+  ↓
+Agent 2 → independently reviews the question
+  ↓
+Aggregator → compares both results
+  ↓
+API → returns one answer
+```
+
+## 5. Why This Demonstrates Multi-Agent / A2A-Like Behavior
+
+The graph demonstrates **multi-agent collaboration** because two independent agents receive the same task and a third agent aggregates their outputs.
+
+```text
+Agent 1 ─────┐
+             ├──► Aggregator ───► Final response
+Agent 2 ─────┘
+```
+
+This is an **A2A-style learning example**, not a full A2A protocol implementation. There is no separate network protocol between the agents yet; communication happens through shared LangGraph state.
+
+## 6. Configuration
 
 Configuration is loaded from `.env` through `common/config.py`.
 
 Example:
-
-```env
-MCP_HOST=127.0.0.1
-MCP_PORT=8000
-
-API_HOST=127.0.0.1
-API_PORT=9999
-
-UI_API_URL=http://127.0.0.1:9999
-```
-
-The `.env` file should not be committed to source control.
-
-## 6. Local Setup
-
-Run the following steps from the project root.
-
-### 6.1 Clone and checkout the branch
-
-```powershell
-git clone https://github.com/sujeet988/agenticai-fastapi-chatbot.git
-cd agenticai-fastapi-chatbot
-git checkout agent-hub
-```
-
-### 6.2 Create a virtual environment
-
-Windows PowerShell:
-
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-```
-
-If PowerShell blocks activation, use the Python executable directly or adjust the local execution policy as appropriate for your machine.
-
-### 6.3 Install dependencies
-
-```powershell
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-The project pins the MCP SDK to the version used by this implementation.
-
-### 6.4 Configure `.env`
-
-Create a `.env` file in the project root:
 
 ```env
 GROQ_API_KEY=your_groq_key
@@ -215,110 +245,11 @@ API_PORT=9999
 UI_API_URL=http://127.0.0.1:9999
 ```
 
-Do not commit `.env` or API keys to Git.
+The `.env` file should not be committed to source control.
 
-### 6.5 Start the local services
+## 7. Local Services
 
-Start all services from the project root in three terminals.
-
-**Terminal 1 — MCP Server**
-
-```powershell
-python -m MCP.servers.server
-```
-
-MCP endpoint:
-
-```text
-http://127.0.0.1:8000/mcp
-```
-
-**Terminal 2 — FastAPI**
-
-```powershell
-python -m api.main
-```
-
-API endpoint:
-
-```text
-http://127.0.0.1:9999
-```
-
-Swagger:
-
-```text
-http://127.0.0.1:9999/docs
-```
-
-**Terminal 3 — Streamlit**
-
-```powershell
-streamlit run ui/streamlit_app.py
-```
-
-Open the Streamlit URL shown in the terminal, normally:
-
-```text
-http://localhost:8501
-```
-
-Ports are read from `.env`; do not pass `--port` for MCP or FastAPI when using these project entrypoints.
-
-### 6.6 Verify MCP independently
-
-Before testing the UI, verify that the MCP server is running and that the client can reach the endpoint.
-
-Expected MCP endpoint:
-
-```text
-http://127.0.0.1:8000/mcp
-```
-
-The two tools exposed by the server are:
-
-```text
-calculator
-get_product_info
-```
-
-### 6.7 Test the agent
-
-From the Streamlit UI, try:
-
-```text
-What is 10 + 20?
-```
-
-The expected path is:
-
-```text
-Streamlit
-   ↓
-FastAPI
-   ↓
-LangGraph Agent
-   ↓
-MCP Client Adapter
-   ↓
-MCP Server
-   ↓
-calculator
-   ↓
-30
-```
-
-Then try:
-
-```text
-What is the price of a laptop?
-```
-
-The agent should select `get_product_info`.
-
-## 7. Runtime Services
-
-For normal local development, use these commands:
+Run from the project root.
 
 ### Terminal 1 — MCP Server
 
@@ -338,14 +269,72 @@ python -m api.main
 streamlit run ui/streamlit_app.py
 ```
 
-## 8. Current Project Structure
+## 8. Testing the Multi-Agent Graph
+
+Open Swagger:
+
+```text
+http://127.0.0.1:9999/docs
+```
+
+Call:
+
+```text
+POST /multi-agent
+```
+
+Example request:
+
+```json
+{
+  "model_name": "openai/gpt-oss-120b",
+  "model_provider": "Groq",
+  "system_prompt": "You are a helpful AI agent.",
+  "messages": [
+    "What is 10 + 20?"
+  ],
+  "allow_search": false
+}
+```
+
+Expected behavior:
+
+```text
+Agent 1 → calculator → 30
+Agent 2 → independent answer
+Aggregator → final combined answer
+```
+
+## 9. RAG Status
+
+RAG remains separate from the current multi-agent graph.
+
+Current direction:
+
+```text
+Document
+   ↓
+Chunking
+   ↓
+Embedding
+   ↓
+Vector Store Interface
+   ├── ChromaDB
+   └── Azure AI Search
+```
+
+RAG can later become another specialized agent in the graph.
+
+## 10. Current Project Structure
 
 ```text
 agenticai-fastapi-chatbot/
 │
 ├── agent/
 │   ├── __init__.py
-│   └── ai_agent.py
+│   ├── ai_agent.py
+│   ├── reviewer_agent.py
+│   └── multi_agent_graph.py
 │
 ├── api/
 │   ├── __init__.py
@@ -378,61 +367,27 @@ agenticai-fastapi-chatbot/
 ├── .env
 ├── .gitignore
 ├── requirements.txt
+├── LOCAL_SETUP.md
 └── SYSTEM_DESIGN.md
 ```
 
-## 9. RAG Status
+## 11. Future Extension
 
-RAG is kept separate from the current agent flow while MCP is being verified.
-
-Current direction:
+The current graph can grow naturally:
 
 ```text
-Document
-   ↓
-Chunking
-   ↓
-Embedding
-   ↓
-Vector Store Interface
-   ├── ChromaDB
-   └── Azure AI Search
+Agent 1 ─────┐
+Agent 2 ─────┼──► Aggregator
+RAG Agent ───┤
+SQL Agent ───┤
+DevOps Agent ┘
 ```
 
-The RAG layer can later be exposed as another agent tool without changing the MCP architecture.
+Later, the graph can add:
 
-## 10. Extensibility
-
-The current boundaries are intended to support future capabilities without rewriting the core request flow.
-
-```text
-Current
-  ↓
-MCP tools
-  ↓
-RAG
-  ↓
-Persistent conversation state
-  ↓
-Long-term memory
-  ↓
-Multi-agent supervisor
-  ↓
-Planning
-  ↓
-Human approval
-  ↓
-Guardrails
-  ↓
-Multiple MCP servers
-  ↓
-A2A communication
-```
-
-## 11. Design Principles
-
-- **Loose coupling:** Agent, MCP adapter, MCP server, and RAG are separate concerns.
-- **Protocol isolation:** MCP-specific code is contained in the MCP server and client adapter.
-- **Provider independence:** LLM selection is configured through the API/UI rather than hard-coded into the agent flow.
-- **Pluggable RAG:** Vector storage can be switched behind an interface.
-- **Incremental architecture:** Advanced capabilities can be added without changing the basic FastAPI → Agent → MCP flow.
+- Persistent state / memory.
+- Human approval nodes.
+- Guardrails.
+- Planning nodes.
+- Multiple MCP servers.
+- True networked A2A communication.
