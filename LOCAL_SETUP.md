@@ -137,4 +137,18 @@ MCP Server
 calculator
   ↓
 30
+## 7. Deactivate the virtual environment
+
+When you're finished working, deactivate the virtual environment to return to your system Python:
+
+```powershell
+deactivate
+```
+
+Thesame command works on macOS / Linux when you used `python -m venv`:
+
+```bash
+deactivate
+```
+
 ```
