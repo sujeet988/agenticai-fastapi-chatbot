@@ -11,7 +11,7 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 # Network / host configuration
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
-MCP_PORT = int(os.getenv("MCP_PORT", "8000"))
+MCP_PORT = int(os.getenv("MCP_PORT", "9000"))
 
 API_HOST = os.getenv("API_HOST", "127.0.0.1")
 API_PORT = int(os.getenv("API_PORT", "9999"))
