@@ -1,7 +1,5 @@
 """Build the configured RAG service."""
 
-import os
-
 from .azure_search import AzureAISearchProvider
 from .config import RAGConfig
 from .embeddings import AzureFoundryEmbeddingProvider
@@ -9,12 +7,12 @@ from .service import RAGService
 
 
 def create_rag_service(config: RAGConfig | None = None) -> RAGService:
-    """Create RAG using Azure AI Search + Azure Foundry embeddings."""
+    """Create RAG with Azure AI Search and Azure Foundry embeddings."""
     config = config or RAGConfig.from_env()
 
     embedding = AzureFoundryEmbeddingProvider(
-        endpoint=os.getenv("AZURE_FOUNDRY_ENDPOINT", ""),
-        api_key=os.getenv("AZURE_FOUNDRY_API_KEY", ""),
+        endpoint=config.embedding_endpoint,
+        api_key=config.embedding_api_key,
         model=config.embedding_model,
     )
 
@@ -26,8 +24,4 @@ def create_rag_service(config: RAGConfig | None = None) -> RAGService:
         content_field=config.content_field,
     )
 
-    return RAGService(
-        embedding_provider=embedding,
-        search_provider=search,
-        default_top_k=config.default_top_k,
-    )
+    return RAGService(embedding, search, config.default_top_k)
