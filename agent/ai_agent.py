@@ -2,7 +2,7 @@ from langgraph.prebuilt import create_react_agent
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
-from common.config import GROQ_API_KEY, OPENAI_API_KEY
+from common.config import GROQ_API_KEY, OPENAI_API_KEY, RAG_ENABLED
 from common.evaluation import BasicResponseEvaluator
 from common.mcp_client_adapter import get_mcp_tools
 from RAG.factory import create_rag_service
@@ -37,7 +37,7 @@ async def get_response_from_ai_agent(
 
     # RAG is optional. The configured provider handles embeddings + retrieval.
     context = ""
-    if allow_search and messages:
+    if RAG_ENABLED and allow_search and messages:
         context = create_rag_service().retrieve_context(messages[-1])
 
     prompt = system_prompt + "\nUse the available MCP tools when appropriate."

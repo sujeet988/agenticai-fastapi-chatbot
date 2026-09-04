@@ -13,6 +13,12 @@ UI_API_URL = os.getenv(
     "UI_API_URL",
     "http://127.0.0.1:9999",
 )
+RAG_ENABLED = os.getenv("RAG_ENABLED", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 
 st.set_page_config(
@@ -31,6 +37,15 @@ st.markdown(
     [data-testid="stSidebar"] * { color: #f7f8f6; }
     [data-testid="stSidebar"] [data-baseweb="select"] * { color: #17202a; }
     [data-testid="stSidebar"] textarea, [data-testid="stSidebar"] input { color: #17202a; }
+    [data-testid="stSidebar"] div.stButton > button,
+    [data-testid="stSidebar"] div.stButton > button p,
+    [data-testid="stSidebar"] div.stButton > button span { color: #17202a !important; }
+    [data-testid="stSidebar"] div.stButton > button:hover,
+    [data-testid="stSidebar"] div.stButton > button:hover p,
+    [data-testid="stSidebar"] div.stButton > button:hover span { color: #17202a !important; }
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] button,
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] button span,
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] button small { color: #17202a !important; }
     .hero { padding: 1.4rem 0 1rem; border-bottom: 1px solid var(--line); }
     .eyebrow { color: var(--accent); font-size: .72rem; font-weight: 700; letter-spacing: .12em; }
     .hero h1 { margin: .2rem 0; font-size: 2.4rem; letter-spacing: 0; }
@@ -39,6 +54,8 @@ st.markdown(
     div[data-testid="stMetric"] { background: white; border: 1px solid var(--line); padding: .8rem 1rem; }
     div.stButton > button { border-radius: 5px; border: 1px solid var(--line); }
     div.stButton > button[kind="primary"] { background: var(--accent); border-color: var(--accent); color: white; }
+    div.stButton > button[kind="primary"] p,
+    div.stButton > button[kind="primary"] span { color: white !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -87,6 +104,15 @@ with st.sidebar:
         value=False,
         help="Show agent and tool execution metadata for learning/debugging.",
     )
+
+    use_rag = st.checkbox(
+        "Use RAG in chat",
+        value=RAG_ENABLED,
+        disabled=not RAG_ENABLED,
+        help="Retrieval is available only when RAG_ENABLED=true in .env.",
+    )
+    if not RAG_ENABLED:
+        st.caption("Enable RAG_ENABLED=true in .env to use retrieval in chat.")
 
     st.divider()
 
@@ -184,7 +210,7 @@ if user_query:
             "model_provider": provider,
             "system_prompt": system_prompt,
             "messages": [user_query],
-            "allow_search": False,
+            "allow_search": use_rag,
             "include_execution_details": show_execution_details,
         }
 

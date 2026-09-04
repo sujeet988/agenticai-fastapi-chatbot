@@ -8,6 +8,12 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+RAG_ENABLED = os.getenv("RAG_ENABLED", "false").lower() in {
+	"1",
+	"true",
+	"yes",
+	"on",
+}
 
 # Network / host configuration
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")

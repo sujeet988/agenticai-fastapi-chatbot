@@ -49,6 +49,20 @@ API_PORT=9999
 # Streamlit -> FastAPI
 # -----------------------------
 UI_API_URL=http://127.0.0.1:9999
+RAG_ENABLED=false
+
+# -----------------------------
+# RAG / Azure AI Search
+# -----------------------------
+AZURE_SEARCH_ENDPOINT=https://<search-service>.search.windows.net
+AZURE_SEARCH_INDEX=<index-name>
+AZURE_SEARCH_API_KEY=<search-api-key>
+AZURE_SEARCH_VECTOR_FIELD=contentVector
+AZURE_SEARCH_CONTENT_FIELD=content
+RAG_TOP_K=5
+AZURE_FOUNDRY_ENDPOINT=https://<resource>.openai.azure.com/openai/v1/
+AZURE_FOUNDRY_API_KEY=<foundry-api-key>
+AZURE_FOUNDRY_EMBEDDING_MODEL=<embedding-deployment-name>
 ```
 
 > Do not commit `.env` to Git. Use real secret values only in your local environment.
