@@ -6,14 +6,16 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class RAGConfig:
-    """Keep RAG infrastructure settings in one place."""
+    """All RAG infrastructure settings live in one configurable object."""
 
     search_endpoint: str
     search_index: str
     search_api_key: str
+    embedding_endpoint: str
+    embedding_api_key: str
+    embedding_model: str
     vector_field: str = "contentVector"
     content_field: str = "content"
-    embedding_model: str = "text-embedding-3-small"
     default_top_k: int = 5
 
     @classmethod
@@ -23,10 +25,10 @@ class RAGConfig:
             search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
             search_index=os.getenv("AZURE_SEARCH_INDEX", ""),
             search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),
+            embedding_endpoint=os.getenv("AZURE_FOUNDRY_ENDPOINT", ""),
+            embedding_api_key=os.getenv("AZURE_FOUNDRY_API_KEY", ""),
+            embedding_model=os.getenv("AZURE_FOUNDRY_EMBEDDING_MODEL", ""),
             vector_field=os.getenv("AZURE_SEARCH_VECTOR_FIELD", "contentVector"),
             content_field=os.getenv("AZURE_SEARCH_CONTENT_FIELD", "content"),
-            embedding_model=os.getenv(
-                "AZURE_FOUNDRY_EMBEDDING_MODEL", "text-embedding-3-small"
-            ),
             default_top_k=int(os.getenv("RAG_TOP_K", "5")),
         )
