@@ -1,14 +1,21 @@
+"""Simple MCP server exposing tools used by the Agent."""
+
 from common.config import MCP_HOST, MCP_PORT
 from mcp.server.mcpserver import MCPServer
 
+
+# Create the MCP server. Agents connect here to discover and call tools.
 mcp = MCPServer("agent-hub-tools")
+
 
 @mcp.tool()
 def calculator(expression: str) -> str:
-    """Calculate a simple arithmetic expression."""
+    """Calculate a basic arithmetic expression."""
+    # Restrict the demo calculator to basic arithmetic characters.
     allowed = set("0123456789+-*/(). %")
-    if any(ch not in allowed for ch in expression):
+    if any(char not in allowed for char in expression):
         return "Invalid expression"
+
     try:
         return str(eval(expression, {"__builtins__": {}}, {}))
     except Exception:
@@ -27,6 +34,7 @@ def get_product_info(product: str) -> str:
 
 
 if __name__ == "__main__":
+    # Streamable HTTP allows the Agent/MCP client to call these tools remotely.
     mcp.run(
         transport="streamable-http",
         host=MCP_HOST,
