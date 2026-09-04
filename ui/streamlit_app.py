@@ -18,7 +18,30 @@ UI_API_URL = os.getenv(
 st.set_page_config(
     page_title="Agent Hub",
     page_icon="🤖",
-    layout="centered",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+st.markdown(
+    """
+    <style>
+    :root { --ink: #17202a; --muted: #66727d; --accent: #e05a3f; --line: #e5e8eb; }
+    .stApp { background: #f7f8f6; color: var(--ink); }
+    [data-testid="stSidebar"] { background: #17202a; }
+    [data-testid="stSidebar"] * { color: #f7f8f6; }
+    [data-testid="stSidebar"] [data-baseweb="select"] * { color: #17202a; }
+    [data-testid="stSidebar"] textarea, [data-testid="stSidebar"] input { color: #17202a; }
+    .hero { padding: 1.4rem 0 1rem; border-bottom: 1px solid var(--line); }
+    .eyebrow { color: var(--accent); font-size: .72rem; font-weight: 700; letter-spacing: .12em; }
+    .hero h1 { margin: .2rem 0; font-size: 2.4rem; letter-spacing: 0; }
+    .hero p { color: var(--muted); margin: 0; }
+    .section-label { color: var(--muted); font-size: .75rem; font-weight: 700; letter-spacing: .08em; }
+    div[data-testid="stMetric"] { background: white; border: 1px solid var(--line); padding: .8rem 1rem; }
+    div.stButton > button { border-radius: 5px; border: 1px solid var(--line); }
+    div.stButton > button[kind="primary"] { background: var(--accent); border-color: var(--accent); color: white; }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 
@@ -27,10 +50,10 @@ if "messages" not in st.session_state:
 
 
 with st.sidebar:
-    st.title("Agent Hub")
-    st.caption("FastAPI + LangGraph + MCP Streamable HTTP")
+    st.markdown("## AGENT HUB")
+    st.caption("A focused workspace for agents and retrieval.")
 
-    st.subheader("Agent Configuration")
+    st.markdown("### 01 / Agent setup")
 
     system_prompt = st.text_area(
         "System Prompt",
@@ -67,13 +90,59 @@ with st.sidebar:
 
     st.divider()
 
-    if st.button("Clear Chat", use_container_width=True):
+    if st.button("Clear conversation", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
+    st.divider()
+    st.markdown("### 02 / Knowledge base")
+    st.caption("Upload a PDF to extract, chunk, embed, and index it in Azure AI Search.")
+    uploaded_pdf = st.file_uploader("PDF document", type=["pdf"], label_visibility="collapsed")
+    if uploaded_pdf and st.button("Index PDF", use_container_width=True):
+        try:
+            response = requests.post(
+                f"{UI_API_URL}/rag/upload",
+                files={
+                    "file": (
+                        uploaded_pdf.name,
+                        uploaded_pdf.getvalue(),
+                        "application/pdf",
+                    )
+                },
+                timeout=120,
+            )
+            response.raise_for_status()
+            result = response.json()
+            st.success(f"Indexed {result['indexed']} chunks from {result['filename']}.")
+        except requests.exceptions.RequestException as exc:
+            st.error(f"PDF indexing failed: {exc}")
 
-st.title("Chat")
-st.caption(f"Using {provider} · {selected_model} · {agent_mode}")
+    st.markdown("### 03 / Retrieval")
+    rag_query = st.text_input("Search indexed documents", placeholder="Ask your knowledge base", label_visibility="collapsed")
+    if st.button("Search knowledge base", use_container_width=True, disabled=not rag_query.strip()):
+        try:
+            response = requests.post(
+                f"{UI_API_URL}/rag",
+                json={"query": rag_query, "top_k": 5},
+                timeout=120,
+            )
+            response.raise_for_status()
+            st.write(response.json().get("context", "No matching context found."))
+        except requests.exceptions.RequestException as exc:
+            st.error(f"RAG search failed: {exc}")
+
+
+st.markdown(
+    f'<div class="hero"><div class="eyebrow">AGENT WORKSPACE</div>'
+    f'<h1>Conversation</h1><p>{provider} / {selected_model} / {agent_mode}</p></div>',
+    unsafe_allow_html=True,
+)
+
+metric_one, metric_two, metric_three = st.columns(3)
+metric_one.metric("Messages", len(st.session_state.messages))
+metric_two.metric("Mode", agent_mode)
+metric_three.metric("Knowledge", "Azure AI Search")
+st.markdown('<div class="section-label">LIVE THREAD</div>', unsafe_allow_html=True)
 
 if not st.session_state.messages:
     st.info("Ask a question below to start the conversation.")

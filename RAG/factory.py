@@ -24,4 +24,9 @@ def create_rag_service(config: RAGConfig | None = None) -> RAGService:
         content_field=config.content_field,
     )
 
-    return RAGService(embedding, search, config.default_top_k)
+    return RAGService(
+        embedding,
+        search,
+        config.default_top_k,
+        config.vector_field,
+    )

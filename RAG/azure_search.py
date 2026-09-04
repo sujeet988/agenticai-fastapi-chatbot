@@ -46,3 +46,13 @@ class AzureAISearchProvider(SearchProvider):
             for result in results
             if result.get(self.content_field)
         ]
+
+    def add_documents(self, documents: list[dict]) -> int:
+        """Upsert embedded chunks into the configured Azure AI Search index."""
+        if not documents:
+            return 0
+        results = self.client.upload_documents(documents=documents)
+        failures = [result for result in results if not result.succeeded]
+        if failures:
+            raise RuntimeError(f"Azure Search rejected {len(failures)} document(s).")
+        return len(results)

@@ -1,10 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, UploadFile
 
 from agent.ai_agent import get_response_from_ai_agent
 from agent.multi_agent_graph import run_multi_agent
 from common.config import API_HOST, API_PORT
 from common.models import ChatRequest, MultiAgentRequest, RagRequest
 from RAG.retriever import retrieve_context
+from RAG.ingestion import extract_pdf_chunks
+from RAG.factory import create_rag_service
 
 
 ALLOWED_MODELS = [
@@ -64,9 +66,35 @@ async def multi_agent_endpoint(request: MultiAgentRequest):
 
 @app.post("/rag")
 def rag_endpoint(request: RagRequest):
+    if not request.query.strip():
+        raise HTTPException(status_code=400, detail="Please provide a question.")
     return {
         "query": request.query,
         "context": retrieve_context(request.query, request.top_k),
+    }
+
+
+@app.post("/rag/upload")
+async def rag_upload_endpoint(file: UploadFile = File(...)):
+    """Extract, chunk, embed, and index one PDF in Azure AI Search."""
+    filename = file.filename or "uploaded.pdf"
+    if file.content_type != "application/pdf" and not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+
+    pdf_bytes = await file.read()
+    if not pdf_bytes:
+        raise HTTPException(status_code=400, detail="The uploaded PDF is empty.")
+
+    try:
+        chunks = extract_pdf_chunks(pdf_bytes, filename)
+        indexed = create_rag_service().ingest(chunks)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"PDF ingestion failed: {exc}") from exc
+
+    return {
+        "filename": filename,
+        "chunks": len(chunks),
+        "indexed": indexed,
     }
 
 

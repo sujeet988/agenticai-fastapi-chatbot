@@ -16,3 +16,10 @@ class AzureFoundryEmbeddingProvider(EmbeddingProvider):
         """Create one embedding for a search query."""
         response = self.client.embeddings.create(model=self.model, input=text)
         return response.data[0].embedding
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        """Create embeddings in one request for efficient document ingestion."""
+        if not texts:
+            return []
+        response = self.client.embeddings.create(model=self.model, input=texts)
+        return [item.embedding for item in sorted(response.data, key=lambda item: item.index)]

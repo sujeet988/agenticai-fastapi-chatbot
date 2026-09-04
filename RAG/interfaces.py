@@ -10,10 +10,18 @@ class EmbeddingProvider(ABC):
     def embed_query(self, text: str) -> list[float]:
         raise NotImplementedError
 
+    @abstractmethod
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        raise NotImplementedError
+
 
 class SearchProvider(ABC):
     """Retrieve relevant documents from a search/vector backend."""
 
     @abstractmethod
     def search(self, query_vector: list[float], top_k: int) -> list[str]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_documents(self, documents: list[dict]) -> int:
         raise NotImplementedError

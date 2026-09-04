@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
 
 
@@ -13,7 +13,7 @@ class ChatRequest(BaseModel):
 
 class RagRequest(BaseModel):
     query: str
-    top_k: int = 2
+    top_k: int = Field(default=5, ge=1, le=20)
 
 
 class MultiAgentRequest(BaseModel):
