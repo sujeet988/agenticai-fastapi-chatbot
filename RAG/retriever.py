@@ -1,15 +1,9 @@
-from .ingestion import load_documents
+"""Backward-compatible RAG retrieval entry point."""
+
+from .factory import create_rag_service
 
 
-DOCUMENTS = load_documents()
-
-
-def retrieve_context(query: str, k: int = 2) -> str:
-    """Simple lexical retriever for the demo RAG pipeline."""
-    words = set(query.lower().split())
-    ranked = sorted(
-        DOCUMENTS,
-        key=lambda document: len(words & set(document.lower().split())),
-        reverse=True,
-    )
-    return "\n\n".join(ranked[:k])
+# Keep the API layer simple while the implementation stays behind RAGService.
+def retrieve_context(query: str, k: int = 5) -> str:
+    """Retrieve grounded context from the configured Azure AI Search index."""
+    return create_rag_service().retrieve_context(query, k)
