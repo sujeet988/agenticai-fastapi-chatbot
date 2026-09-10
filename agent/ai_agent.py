@@ -62,6 +62,9 @@ async def get_response_from_ai_agent(
             "allow_search": allow_search,
         },
     )
+    print("TRACE CONFIG =", trace_config)
+    if trace_config is None:
+        print("WARNING: Langfuse tracing is DISABLED")
 
     agent = create_react_agent(llm, mcp_tools)
     result = await agent.ainvoke(
