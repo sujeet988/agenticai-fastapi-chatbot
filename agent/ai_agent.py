@@ -4,7 +4,7 @@ from langchain_openai import ChatOpenAI
 
 from common.config import GROQ_API_KEY, OPENAI_API_KEY, RAG_ENABLED
 from common.evaluation import BasicResponseEvaluator
-from common.Logging.observability import get_trace_config
+from common.Logging.observability import flush_traces, get_trace_config
 from common.mcp_client_adapter import get_mcp_tools
 from RAG.factory import create_rag_service
 
@@ -68,6 +68,7 @@ async def get_response_from_ai_agent(
         {"messages": conversation},
         config=trace_config,
     )
+    flush_traces()
     answer = result["messages"][-1].content
 
     # Evaluation is a replaceable layer; Azure AI Foundry evaluators can be
