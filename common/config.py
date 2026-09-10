@@ -25,3 +25,15 @@ API_PORT = int(os.getenv("API_PORT", "9999"))
 UI_API_URL = os.getenv("UI_API_URL", f"http://{API_HOST}:{API_PORT}")
 
 MCP_SERVER_URL = f"http://{MCP_HOST}:{MCP_PORT}/mcp"
+
+
+## LangFuse Integration
+LANGFUSE_ENABLED = os.getenv("LANGFUSE_ENABLED", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
