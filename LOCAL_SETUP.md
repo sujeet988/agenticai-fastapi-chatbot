@@ -80,7 +80,7 @@ python -m MCP.servers.server
 MCP endpoint:
 
 ```text
-http://127.0.0.1:8000/mcp
+http://127.0.0.1:http://127.0.0.1:9000/mcp
 ```
 
 ### Terminal 2 — FastAPI
