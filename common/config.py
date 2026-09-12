@@ -28,12 +28,7 @@ MCP_SERVER_URL = f"http://{MCP_HOST}:{MCP_PORT}/mcp"
 
 
 ## Langfuse Integration
-LANGFUSE_ENABLED = os.getenv("LANGFUSE_ENABLED", "false").lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
+LANGFUSE_ENABLED= True
 LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
 LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
 LANGFUSE_BASE_URL = os.getenv(
